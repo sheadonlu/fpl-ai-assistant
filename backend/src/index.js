@@ -1,15 +1,15 @@
+import './env.js';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import fplRoutes from './routes/fpl.js';
-
-dotenv.config();
+import aiRoutes from './routes/ai.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.use('/api/fpl', fplRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
