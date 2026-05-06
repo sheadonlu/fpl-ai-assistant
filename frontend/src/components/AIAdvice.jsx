@@ -19,12 +19,20 @@ function AIAdvice({ teamId }) {
   }
 
   return (
-    <div>
-      <h2>AI Advice</h2>
-      <button onClick={fetchAdvice} disabled={loading}>
+    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+      <h2 className="text-lg font-bold text-white mb-4">AI Advice</h2>
+      <button
+        onClick={fetchAdvice}
+        disabled={loading}
+        className="bg-green-500 hover:bg-green-400 disabled:bg-gray-700 disabled:text-gray-500 text-black font-semibold rounded-lg px-6 py-2 transition-colors"
+      >
         {loading ? 'Thinking...' : 'Get AI Advice'}
       </button>
-      {advice && <p style={{ whiteSpace: 'pre-wrap' }}>{advice}</p>}
+      {advice && (
+        <div className="mt-4 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+          {advice}
+        </div>
+      )}
     </div>
   );
 }
