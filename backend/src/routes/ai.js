@@ -34,31 +34,47 @@ async function buildSquadContext(teamId) {
     };
   });
 
-  return { bootstrap, currentGW, managerInfo, teamPicks, squad };
+  const availablePlayers = bootstrap.elements
+    .filter(p => p.status !== 'u')
+    .map(p => ({
+      name: `${p.first_name} ${p.second_name}`,
+      position: ['', 'GK', 'DEF', 'MID', 'FWD'][p.element_type],
+      team: bootstrap.teams.find(t => t.id === p.team)?.name,
+      price: p.now_cost / 10,
+      form: p.form,
+      totalPoints: p.total_points,
+    }));
+
+  return { bootstrap, currentGW, managerInfo, teamPicks, squad, availablePlayers };
 }
 
 // POST /api/ai/advice/:teamId
 router.post('/advice/:teamId', async (req, res) => {
   try {
     const { teamId } = req.params;
-    const { bootstrap, currentGW, managerInfo, teamPicks, squad } = await buildSquadContext(teamId);
+    const { currentGW, managerInfo, teamPicks, squad, availablePlayers } = await buildSquadContext(teamId);
 
     const prompt = `
-      You are an expert Fantasy Premier League assistant.
+You are an expert Fantasy Premier League assistant.
 
-      Manager: ${managerInfo.player_first_name} ${managerInfo.player_last_name}
-      Team name: ${managerInfo.name}
-      Gameweek: ${currentGW}
-      Bank: £${teamPicks.entry_history.bank / 10}m
+Manager: ${managerInfo.player_first_name} ${managerInfo.player_last_name}
+Team name: ${managerInfo.name}
+Gameweek: ${currentGW}
+Bank: £${teamPicks.entry_history.bank / 10}m
 
-      Their current squad (multiplier 0 = bench, 1 = playing, 2 = captain):
-      ${squad.map(p => `- ${p.name} (${p.position}, ${p.team}) £${p.price}m | Form: ${p.form} | Total pts: ${p.totalPoints} | Multiplier: ${p.multiplier}`).join('\n')}
+Their current squad (multiplier 0 = bench, 1 = playing, 2 = captain):
+${squad.map(p => `- ${p.name} (${p.position}, ${p.team}) £${p.price}m | Form: ${p.form} | Total pts: ${p.totalPoints} | Multiplier: ${p.multiplier}`).join('\n')}
 
-      Please give:
-      1. Recommended starting XI and captain choice with reasons
-      2. Any transfer suggestions based on form and value
-      3. Key things to watch this gameweek
-    `;
+Available players in the game this season:
+${availablePlayers.map(p => `- ${p.name} (${p.position}, ${p.team}) £${p.price}m | Form: ${p.form} | Total pts: ${p.totalPoints}`).join('\n')}
+
+Only suggest players from the available players list above when recommending transfers. Do not suggest players not on this list.
+
+Please give:
+1. Recommended starting XI and captain choice with reasons
+2. Any transfer suggestions based on form and value
+3. Key things to watch this gameweek
+    `.trim();
 
     const advice = await getAIAdvice(prompt);
     res.json({ advice });
@@ -74,7 +90,7 @@ router.post('/chat/:teamId', async (req, res) => {
     const { teamId } = req.params;
     const { messages, userMessage } = req.body;
 
-    const { currentGW, managerInfo, teamPicks, squad } = await buildSquadContext(teamId);
+    const { currentGW, managerInfo, teamPicks, squad, availablePlayers } = await buildSquadContext(teamId);
 
     const systemPrompt = `
 You are an expert Fantasy Premier League assistant.
@@ -87,6 +103,10 @@ Bank: £${teamPicks.entry_history.bank / 10}m
 Their current squad (multiplier 0 = bench, 1 = playing, 2 = captain):
 ${squad.map(p => `- ${p.name} (${p.position}, ${p.team}) £${p.price}m | Form: ${p.form} | Total pts: ${p.totalPoints} | Multiplier: ${p.multiplier}`).join('\n')}
 
+Available players in the game this season:
+${availablePlayers.map(p => `- ${p.name} (${p.position}, ${p.team}) £${p.price}m | Form: ${p.form} | Total pts: ${p.totalPoints}`).join('\n')}
+
+Only suggest players from the available players list above when recommending transfers. Do not suggest players not on this list.
 Answer questions about their team, suggest transfers, compare players, advise on captaincy, and give general FPL strategy advice. Be concise and direct. Use bullet points where helpful.
     `.trim();
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 import { API_BASE } from '../config';
 
 function AIAdvice({ teamId }) {
@@ -29,8 +30,20 @@ function AIAdvice({ teamId }) {
         {loading ? 'Thinking...' : 'Get AI Advice'}
       </button>
       {advice && (
-        <div className="mt-4 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-          {advice}
+        <div className="mt-4 text-gray-300 text-sm leading-relaxed">
+          <ReactMarkdown
+            components={{
+              p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+              ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-3">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 mb-3">{children}</ol>,
+              li: ({ children }) => <li className="text-gray-300">{children}</li>,
+              strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
+              h3: ({ children }) => <h3 className="text-green-400 font-semibold text-base mt-4 mb-2">{children}</h3>,
+              h2: ({ children }) => <h2 className="text-green-400 font-bold text-lg mt-4 mb-2">{children}</h2>,
+            }}
+          >
+            {advice}
+          </ReactMarkdown>
         </div>
       )}
     </div>
