@@ -13,3 +13,14 @@ export async function getAIAdvice(prompt) {
 
   return response.choices[0].message.content;
 }
+export async function getChatReply(systemPrompt, messages) {
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...messages,
+    ],
+    max_tokens: 1024,
+  });
+  return completion.choices[0].message.content;
+}

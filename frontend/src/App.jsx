@@ -4,6 +4,7 @@ import { API_BASE } from './config';
 import TeamIdForm from './components/TeamIdForm';
 import Squad from './components/Squad';
 import AIAdvice from './components/AIAdvice';
+import Chat from './components/Chat';
 
 function App() {
   const [managerData, setManagerData] = useState(null);
@@ -69,6 +70,7 @@ function App() {
             </div>
             <Squad squad={managerData.squad} />
             <AIAdvice teamId={managerData.teamId} />
+            <Chat teamId={managerData.teamId} />
           </div>
         )}
       </main>
