@@ -37,11 +37,11 @@ async function buildSquadContext(teamId) {
   const availablePlayers = bootstrap.elements
   .filter(p => p.status !== 'u')
   .sort((a, b) => parseFloat(b.form) - parseFloat(a.form))
-  .slice(0, 100) // top 100 players by form
+  .slice(0, 100)
   .map(p => ({
     name: `${p.first_name} ${p.second_name}`,
     position: ['', 'GK', 'DEF', 'MID', 'FWD'][p.element_type],
-    team: bootstrap.teams.find(t => t.id === p.team)?.name,
+    team: bootstrap.teams.find(t => t.id === p.team)?.name ?? 'Unknown',
     price: p.now_cost / 10,
     form: p.form,
     totalPoints: p.total_points,
