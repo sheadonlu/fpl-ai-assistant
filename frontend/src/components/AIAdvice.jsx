@@ -1,10 +1,50 @@
 import { useState } from 'react';
-import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import axios from 'axios';
 import { API_BASE } from '../config';
 
-function AIAdvice({ teamId }) {
-  const [advice, setAdvice] = useState(null);
+// Split a single markdown string into up to 4 logical chunks for the grid cells.
+// Falls back gracefully if the AI returns one big blob.
+function parseAdviceIntoChunks(text) {
+  // Try splitting on markdown h2/h3 headings
+  const headingRegex = /(?=^#{2,3} )/m;
+  const parts = text.split(headingRegex).filter(Boolean);
+
+  if (parts.length >= 2) {
+    // Pad or trim to 4
+    while (parts.length < 4) parts.push('');
+    return parts.slice(0, 4);
+  }
+
+  // Fallback: split on double newlines into paragraphs, group them
+  const paragraphs = text.split(/\n\n+/).filter(Boolean);
+  const size = Math.ceil(paragraphs.length / 4);
+  const chunks = [];
+  for (let i = 0; i < 4; i++) {
+    chunks.push(paragraphs.slice(i * size, (i + 1) * size).join('\n\n'));
+  }
+  return chunks;
+}
+
+const TAGS = [
+  { label: 'Captain pick',    className: '' },
+  { label: 'Transfer advice', className: 'warn' },
+  { label: 'Chip strategy',   className: '' },
+  { label: 'Fixture view',    className: 'neutral' },
+];
+
+const mdComponents = {
+  p:      ({ children }) => <p>{children}</p>,
+  ul:     ({ children }) => <ul>{children}</ul>,
+  ol:     ({ children }) => <ol>{children}</ol>,
+  li:     ({ children }) => <li>{children}</li>,
+  strong: ({ children }) => <strong>{children}</strong>,
+  h2:     ({ children }) => <h2>{children}</h2>,
+  h3:     ({ children }) => <h3>{children}</h3>,
+};
+
+export default function AIAdvice({ teamId }) {
+  const [advice, setAdvice]   = useState(null);
   const [loading, setLoading] = useState(false);
 
   async function fetchAdvice() {
@@ -19,35 +59,54 @@ function AIAdvice({ teamId }) {
     }
   }
 
-  return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-      <h2 className="text-lg font-bold text-white mb-4">AI Advice</h2>
-      <button
-        onClick={fetchAdvice}
-        disabled={loading}
-        className="bg-green-500 hover:bg-green-400 disabled:bg-gray-700 disabled:text-gray-500 text-black font-semibold rounded-lg px-6 py-2 transition-colors"
-      >
-        {loading ? 'Thinking...' : 'Get AI Advice'}
-      </button>
-      {advice && (
-        <div className="mt-4 text-gray-300 text-sm leading-relaxed">
-          <ReactMarkdown
-            components={{
-              p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
-              ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-3">{children}</ul>,
-              ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 mb-3">{children}</ol>,
-              li: ({ children }) => <li className="text-gray-300">{children}</li>,
-              strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-              h3: ({ children }) => <h3 className="text-green-400 font-semibold text-base mt-4 mb-2">{children}</h3>,
-              h2: ({ children }) => <h2 className="text-green-400 font-bold text-lg mt-4 mb-2">{children}</h2>,
-            }}
-          >
-            {advice}
-          </ReactMarkdown>
+  // Pre-fetch state
+  if (!advice && !loading) {
+    return (
+      <div className="fpl-advice-grid">
+        <div className="fpl-advice-fetch-wrap">
+          <button className="fpl-advice-fetch-btn" onClick={fetchAdvice}>
+            Generate AI Analysis →
+          </button>
+          <span className="fpl-advice-fetch-hint">
+            Analyses your full squad, fixtures, and form in one go
+          </span>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="fpl-advice-grid">
+        <div className="fpl-advice-fetch-wrap">
+          <span className="fpl-advice-fetch-hint" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Analysing your squad…
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const chunks = parseAdviceIntoChunks(advice);
+
+  return (
+    <div className="fpl-advice-grid">
+      {TAGS.map((tag, i) => (
+        <div className="fpl-advice-cell" key={i}>
+          <div className={`fpl-advice-tag ${tag.className}`}>{tag.label}</div>
+          {chunks[i] ? (
+            <div className="fpl-advice-body">
+              <ReactMarkdown components={mdComponents}>
+                {chunks[i]}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <div className="fpl-advice-body" style={{ color: 'var(--cream-dimmer)', fontStyle: 'italic' }}>
+              No specific advice for this category.
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
-
-export default AIAdvice;

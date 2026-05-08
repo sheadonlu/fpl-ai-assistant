@@ -1,60 +1,104 @@
 const POSITIONS = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' };
 
-const POSITION_COLORS = {
-  1: 'bg-yellow-500',
-  2: 'bg-blue-500',
-  3: 'bg-green-500',
-  4: 'bg-red-500',
-};
+function PlayerCard({ player, isBench }) {
+  const posLabel = POSITIONS[player.position] || '?';
 
-function PlayerCard({ player }) {
   return (
-    <div className={`bg-gray-800 rounded-lg p-3 border ${player.isCaptain ? 'border-green-500' : 'border-gray-700'} flex items-center justify-between`}>
-      <div className="flex items-center gap-3">
-        <span className={`${POSITION_COLORS[player.position]} text-black text-xs font-bold px-2 py-1 rounded`}>
-          {POSITIONS[player.position]}
-        </span>
-        <div>
-          <p className="text-white font-medium text-sm">
-            {player.name}
-            {player.isCaptain && <span className="ml-2 text-green-400 text-xs">(C)</span>}
-            {player.isViceCaptain && <span className="ml-2 text-yellow-400 text-xs">(VC)</span>}
-          </p>
-          <p className="text-gray-400 text-xs">Form: {player.form}</p>
-        </div>
+    <div className="fpl-player-card">
+      <div className="fpl-player-shirt">
+        {posLabel}
+        {player.isCaptain && (
+          <span className="fpl-player-shirt-badge captain">C</span>
+        )}
+        {player.isViceCaptain && !player.isCaptain && (
+          <span className="fpl-player-shirt-badge vice">V</span>
+        )}
       </div>
-      <div className="text-right">
-        <p className="text-white text-sm font-semibold">{player.totalPoints}pts</p>
-        <p className="text-gray-400 text-xs">£{player.price}m</p>
+      <div className="fpl-player-name" title={player.name}>
+        {player.name.split(' ').pop()}
+      </div>
+      <div className={`fpl-player-pts${isBench ? ' bench' : ''}`}>
+        {player.totalPoints}
       </div>
     </div>
   );
 }
 
-function Squad({ squad }) {
+function PitchRow({ players, label, isBench }) {
+  if (!players.length) return null;
+  return (
+    <>
+      <div className="fpl-pitch-label">{label}</div>
+      <div className="fpl-pitch-row">
+        {players.map(p => (
+          <PlayerCard key={p.playerId} player={p} isBench={isBench} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+export default function Squad({ squad, manager, transfers }) {
   const starting = squad.filter(p => p.multiplier > 0);
-  const bench = squad.filter(p => p.multiplier === 0);
+  const bench    = squad.filter(p => p.multiplier === 0);
+
+  const gks  = starting.filter(p => p.position === 1);
+  const defs = starting.filter(p => p.position === 2);
+  const mids = starting.filter(p => p.position === 3);
+  const fwds = starting.filter(p => p.position === 4);
+
+  const totPts = manager?.totalPoints;
+  const rank   = manager?.overallRank;
+  const bank   = transfers?.bank != null ? `£${transfers.bank}m` : '—';
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-        <h2 className="text-lg font-bold text-white mb-4">Starting XI</h2>
-        <div className="space-y-2">
-          {starting.map(player => (
-            <PlayerCard key={player.playerId} player={player} />
-          ))}
+    <>
+      {/* Stats row */}
+      <div className="fpl-stats-row">
+        <div className="fpl-stat-cell">
+          <div className="fpl-stat-label">Total Points</div>
+          <div className="fpl-stat-value green">{totPts?.toLocaleString() ?? '—'}</div>
+          <div className="fpl-stat-sub">Overall</div>
+        </div>
+        <div className="fpl-stat-cell">
+          <div className="fpl-stat-label">Overall Rank</div>
+          <div className="fpl-stat-value">{rank?.toLocaleString() ?? '—'}</div>
+          <div className="fpl-stat-sub">Global position</div>
+        </div>
+        <div className="fpl-stat-cell">
+          <div className="fpl-stat-label">In the Bank</div>
+          <div className="fpl-stat-value green">{bank}</div>
+          <div className="fpl-stat-sub">Available budget</div>
+        </div>
+        <div className="fpl-stat-cell">
+          <div className="fpl-stat-label">Manager</div>
+          <div className="fpl-stat-value" style={{ fontSize: '1.4rem' }}>
+            {manager?.name ?? '—'}
+          </div>
+          <div className="fpl-stat-sub">GW{manager?.gameweek ?? '—'}</div>
         </div>
       </div>
-      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-        <h2 className="text-lg font-bold text-white mb-4">Bench</h2>
-        <div className="space-y-2">
-          {bench.map(player => (
-            <PlayerCard key={player.playerId} player={player} />
-          ))}
-        </div>
+
+      {/* Pitch */}
+      <div className="fpl-pitch">
+        <PitchRow players={gks}  label="Goalkeeper" />
+
+        {defs.length > 0 && <hr className="fpl-pitch-divider" />}
+        <PitchRow players={defs} label="Defenders" />
+
+        {mids.length > 0 && <hr className="fpl-pitch-divider" />}
+        <PitchRow players={mids} label="Midfielders" />
+
+        {fwds.length > 0 && <hr className="fpl-pitch-divider" />}
+        <PitchRow players={fwds} label="Forwards" />
+
+        {bench.length > 0 && (
+          <>
+            <hr className="fpl-pitch-divider" style={{ marginTop: '2rem' }} />
+            <PitchRow players={bench} label="Bench" isBench />
+          </>
+        )}
       </div>
-    </div>
+    </>
   );
 }
-
-export default Squad;

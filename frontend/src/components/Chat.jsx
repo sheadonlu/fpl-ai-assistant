@@ -1,18 +1,34 @@
-import { useState, useEffect, useRef } from "react";
-import { API_BASE } from "../config";
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { API_BASE } from '../config';
+
+const mdComponents = {
+  p:      ({ children }) => <p>{children}</p>,
+  ul:     ({ children }) => <ul>{children}</ul>,
+  ol:     ({ children }) => <ol>{children}</ol>,
+  li:     ({ children }) => <li>{children}</li>,
+  strong: ({ children }) => <strong>{children}</strong>,
+  h3:     ({ children }) => <h3>{children}</h3>,
+};
+
+const CAPABILITIES = [
+  'Captain & vice-captain recommendations',
+  'Transfer targets with fixture context',
+  'Chip timing & wildcard planning',
+  'Differential picks for rank climbing',
+  'Bench order optimisation',
+];
 
 export default function Chat({ teamId }) {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const bottomRef = useRef(null);
+  const [input, setInput]       = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
+  const bottomRef               = useRef(null);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     if (messages.length > 0) {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
@@ -20,117 +36,120 @@ export default function Chat({ teamId }) {
     const trimmed = input.trim();
     if (!trimmed || loading) return;
 
-    const userMsg = { role: "user", content: trimmed };
+    const userMsg        = { role: 'user', content: trimmed };
     const updatedMessages = [...messages, userMsg];
 
     setMessages(updatedMessages);
-    setInput("");
+    setInput('');
     setLoading(true);
     setError(null);
 
     try {
       const res = await fetch(`${API_BASE}/ai/chat/${teamId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: messages, // history before this message
-          userMessage: trimmed,
-        }),
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ messages, userMessage: trimmed }),
       });
-
-      if (!res.ok) throw new Error("Failed to get response");
+      if (!res.ok) throw new Error('Failed');
       const data = await res.json();
-
-      setMessages(data.messages); // backend returns full updated history
+      setMessages(data.messages);
     } catch {
-      setError("Something went wrong. Try again.");
-      setMessages(updatedMessages); // keep user message visible
+      setError('Something went wrong. Try again.');
+      setMessages(updatedMessages);
     } finally {
       setLoading(false);
     }
   }
 
   function handleKeyDown(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   }
 
   return (
-    <div className="flex flex-col h-[500px] border border-gray-700 rounded-xl bg-gray-900 mt-6">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-700">
-        <h2 className="text-white font-semibold text-sm">FPL Assistant</h2>
-        <p className="text-gray-400 text-xs">Ask anything about your squad</p>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {messages.length === 0 && (
-          <p className="text-gray-500 text-sm text-center mt-8">
-            Ask me about transfers, captaincy, or your squad...
+    <div className="fpl-chat-layout">
+      {/* Left info panel */}
+      <div className="fpl-chat-info">
+        <div>
+          <h3 className="fpl-chat-info-title">
+            Your personal<br /><em>FPL analyst.</em>
+          </h3>
+          <p className="fpl-chat-info-copy">
+            Ask anything about your squad. The AI has full context of your
+            players, upcoming fixtures, form ratings, and available transfers.
           </p>
-        )}
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-700 text-gray-100"
-              }`}
-            >
-              {msg.role === "assistant" ? (
-                <ReactMarkdown
-                    components={{
-                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                        ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-2">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 mb-2">{children}</ol>,
-                        li: ({ children }) => <li className="text-gray-100">{children}</li>,
-                        strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-                        h3: ({ children }) => <h3 className="text-green-400 font-semibold mt-3 mb-1">{children}</h3>,
-                    }}
-                >
-                    {msg.content}
-                </ReactMarkdown>
-              ) : (
-                msg.content
-              )}
-            </div>
+          <div className="fpl-chat-caps">
+            {CAPABILITIES.map((cap, i) => (
+              <div key={i} className="fpl-chat-cap">
+                <span className="fpl-chat-cap-dot" />
+                {cap}
+              </div>
+            ))}
           </div>
-        ))}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-700 text-gray-400 rounded-lg px-3 py-2 text-sm">
-              Thinking...
-            </div>
-          </div>
-        )}
-        {error && <p className="text-red-400 text-xs text-center">{error}</p>}
-        <div ref={bottomRef} />
+        </div>
       </div>
 
-      {/* Input */}
-      <div className="px-4 py-3 border-t border-gray-700 flex gap-2">
-        <textarea
-          className="flex-1 bg-gray-800 text-white text-sm rounded-lg px-3 py-2 resize-none outline-none border border-gray-600 focus:border-green-500"
-          rows={1}
-          placeholder="Ask something..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-        <button
-          onClick={sendMessage}
-          disabled={loading || !input.trim()}
-          className="bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white text-sm font-medium px-4 rounded-lg transition-colors"
-        >
-          Send
-        </button>
+      {/* Right chat window */}
+      <div className="fpl-chat-window">
+        <div className="fpl-chat-messages">
+          {messages.length === 0 && (
+            <p className="fpl-chat-empty">
+              Ask about transfers, captaincy,<br />chips, or your squad…
+            </p>
+          )}
+
+          {messages.map((msg, i) => (
+            <div key={i} className="fpl-chat-msg">
+              <span className={`fpl-chat-msg-meta ${msg.role === 'user' ? 'user' : 'ai'}`}>
+                {msg.role === 'user' ? 'You' : 'FPL AI'}
+              </span>
+              <div className={`fpl-chat-bubble${msg.role === 'user' ? ' user' : ''}`}>
+                {msg.role === 'assistant' ? (
+                  <ReactMarkdown components={mdComponents}>
+                    {msg.content}
+                  </ReactMarkdown>
+                ) : (
+                  msg.content
+                )}
+              </div>
+            </div>
+          ))}
+
+          {loading && (
+            <div className="fpl-chat-msg">
+              <span className="fpl-chat-msg-meta ai">FPL AI</span>
+              <div className="fpl-chat-thinking">
+                <div className="fpl-thinking-dots">
+                  <span /><span /><span />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {error && <p className="fpl-chat-error">{error}</p>}
+
+          <div ref={bottomRef} />
+        </div>
+
+        <div className="fpl-chat-input-row">
+          <textarea
+            className="fpl-chat-input"
+            rows={1}
+            placeholder="Ask something…"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button
+            className="fpl-chat-send"
+            onClick={sendMessage}
+            disabled={loading || !input.trim()}
+          >
+            Send ↑
+          </button>
+        </div>
       </div>
     </div>
   );

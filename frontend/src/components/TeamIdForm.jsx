@@ -1,38 +1,63 @@
 import { useState } from 'react';
 
-function TeamIdForm({ onSubmit }) {
+export default function TeamIdForm({ onSubmit, loading, error }) {
   const [teamId, setTeamId] = useState('');
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (teamId.trim()) onSubmit(teamId);
+    if (teamId.trim()) onSubmit(teamId.trim());
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') handleSubmit(e);
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-white mb-2">Enter your FPL Team ID</h2>
-        <p className="text-gray-400 text-sm mb-6">
-          Find your ID on the FPL website → Points → check the URL
+    <div className="fpl-hero">
+      <div className="fpl-hero-eyebrow">Fantasy Premier League Intelligence</div>
+
+      <h1 className="fpl-hero-title">
+        Your squad.<br />
+        <em>Optimised.</em>
+      </h1>
+
+      <div className="fpl-hero-bottom">
+        <p className="fpl-hero-copy">
+          AI-powered squad analysis, transfer recommendations, and captain
+          picks — built on live FPL data and fixture intelligence.
         </p>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="number"
-            placeholder="e.g. 1234567"
-            value={teamId}
-            onChange={(e) => setTeamId(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
-          />
-          <button
-            type="submit"
-            className="bg-green-500 hover:bg-green-400 text-black font-semibold rounded-lg px-4 py-3 transition-colors"
-          >
-            Load My Team
-          </button>
-        </form>
+
+        <div className="fpl-hero-form">
+          <span className="fpl-hero-form-label">Enter your FPL Team ID</span>
+          <div className="fpl-hero-input-row">
+            <input
+              className="fpl-hero-input"
+              type="number"
+              placeholder="e.g. 4829501"
+              value={teamId}
+              onChange={e => setTeamId(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoFocus
+            />
+            <button
+              className="fpl-hero-btn"
+              onClick={handleSubmit}
+              disabled={loading || !teamId.trim()}
+            >
+              {loading ? 'Loading...' : 'Analyse →'}
+            </button>
+          </div>
+          {error && <span className="fpl-hero-error">{error}</span>}
+          <span style={{ fontSize: '0.65rem', color: 'var(--cream-dimmer)', fontFamily: 'var(--font-mono)' }}>
+            FPL website → Points → check the URL
+          </span>
+        </div>
+      </div>
+
+      <div className="fpl-hero-scroll">
+        <span>Scroll</span>
+        <div className="fpl-scroll-line" />
       </div>
     </div>
   );
 }
-
-export default TeamIdForm;
