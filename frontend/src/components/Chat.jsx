@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { API_BASE } from "../config";
+import ReactMarkdown from 'react-markdown';
 
 export default function Chat({ teamId }) {
   const [messages, setMessages] = useState([]);
@@ -10,7 +11,9 @@ export default function Chat({ teamId }) {
 
   // Scroll to bottom on new messages
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0) {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   async function sendMessage() {
@@ -81,7 +84,22 @@ export default function Chat({ teamId }) {
                   : "bg-gray-700 text-gray-100"
               }`}
             >
-              {msg.content}
+              {msg.role === "assistant" ? (
+                <ReactMarkdown
+                    components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-2">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 mb-2">{children}</ol>,
+                        li: ({ children }) => <li className="text-gray-100">{children}</li>,
+                        strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
+                        h3: ({ children }) => <h3 className="text-green-400 font-semibold mt-3 mb-1">{children}</h3>,
+                    }}
+                >
+                    {msg.content}
+                </ReactMarkdown>
+              ) : (
+                msg.content
+              )}
             </div>
           </div>
         ))}
