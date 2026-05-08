@@ -46,6 +46,8 @@ async function buildSquadContext(teamId) {
     form: p.form,
     totalPoints: p.total_points,
   }));
+
+  return { bootstrap, currentGW, managerInfo, teamPicks, squad, availablePlayers }; // 👈 this was missing
 }
 
 // POST /api/ai/advice/:teamId
