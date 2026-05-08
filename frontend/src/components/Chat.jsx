@@ -26,7 +26,7 @@ export default function Chat({ teamId }) {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/ai/chat/${teamId}`, {
+      const res = await fetch(`${API_BASE}/ai/chat/${teamId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
