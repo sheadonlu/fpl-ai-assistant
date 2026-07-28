@@ -85,7 +85,8 @@ If you have nothing relevant for a category, write "No specific advice for this 
     `.trim();
 
     const raw = await getAIAdvice(prompt);
-    const advice = JSON.parse(raw);
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const advice = JSON.parse(cleaned);
     res.json({ advice });
 
   } catch (err) {
