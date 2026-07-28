@@ -90,24 +90,6 @@ function App() {
             </div>
             <Chat teamId={managerData.teamId} />
           </section>
-
-          <footer className="fpl-footer">
-            <div className="fpl-footer-col">
-              <div className="fpl-footer-label">Built by</div>
-              <div className="fpl-footer-val">FPL AI</div>
-              <div className="fpl-footer-sub">Powered by LLaMA 3.3 70B</div>
-            </div>
-            <div className="fpl-footer-col">
-              <div className="fpl-footer-label">Data source</div>
-              <div className="fpl-footer-val">Official FPL API</div>
-              <div className="fpl-footer-sub">Live · Updated each GW</div>
-            </div>
-            <div className="fpl-footer-col">
-              <div className="fpl-footer-label">Stack</div>
-              <div className="fpl-footer-val">React + Node</div>
-              <div className="fpl-footer-sub">Vercel + Render</div>
-            </div>
-          </footer>
         </main>
       )}
     </>

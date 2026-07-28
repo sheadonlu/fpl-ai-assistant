@@ -50,11 +50,6 @@ export default function TeamIdForm({ onSubmit, loading, error }) {
           {error && <span className="fpl-hero-error">{error}</span>}
         </div>
       </div>
-
-      <div className="fpl-hero-scroll">
-        <span>Scroll</span>
-        <div className="fpl-scroll-line" />
-      </div>
     </div>
   );
 }
