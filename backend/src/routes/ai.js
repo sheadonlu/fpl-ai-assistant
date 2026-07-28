@@ -2,6 +2,17 @@ import { Router } from 'express';
 import { getBootstrapData, getManagerInfo, getManagerTeam } from '../services/fplService.js';
 import { getAIAdvice, getChatReply } from '../services/aiService.js';
 
+function sanitizeJsonString(str) {
+  return str.replace(/"(?:[^"\\]|\\.)*"/gs, (match) => {
+    return match.replace(/[\u0000-\u001F]/g, (ch) => {
+      if (ch === '\n') return '\\n';
+      if (ch === '\r') return '\\r';
+      if (ch === '\t') return '\\t';
+      return '';
+    });
+  });
+}
+
 const router = Router();
 
 // Shared helper — builds squad array from FPL data
@@ -86,7 +97,8 @@ If you have nothing relevant for a category, write "No specific advice for this 
 
     const raw = await getAIAdvice(prompt);
     const cleaned = raw.replace(/```json|```/g, '').trim();
-    const advice = JSON.parse(cleaned);
+    const sanitized = sanitizeJsonString(cleaned);
+    const advice = JSON.parse(sanitized);
     res.json({ advice });
 
   } catch (err) {
