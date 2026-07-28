@@ -19,8 +19,10 @@ function App() {
     try {
       const { data } = await axios.get(`${API_BASE}/fpl/manager/${teamId}`);
       setManagerData({ ...data, teamId });
-    } catch {
-      setError('Could not find that team ID. Please check and try again.');
+    } catch (err) {
+      const message = err.response?.data?.error
+        ?? 'Could not find that team ID. Please check and try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
