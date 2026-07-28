@@ -43,7 +43,8 @@ router.get('/manager/:teamId', async (req, res) => {
 
     const bootstrap = await getBootstrapData();
     const currentGW = bootstrap.events.find(e => e.is_current)?.id
-      ?? bootstrap.events.find(e => e.is_next)?.id;
+      ?? bootstrap.events.find(e => e.is_next)?.id
+      ?? bootstrap.events[bootstrap.events.length - 1]?.id;
 
     const [managerInfo, teamPicks] = await Promise.all([
       getManagerInfo(teamId),

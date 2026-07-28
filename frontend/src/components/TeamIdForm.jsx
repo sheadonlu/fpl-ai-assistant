@@ -48,9 +48,6 @@ export default function TeamIdForm({ onSubmit, loading, error }) {
             </button>
           </div>
           {error && <span className="fpl-hero-error">{error}</span>}
-          <span style={{ fontSize: '0.65rem', color: 'var(--cream-dimmer)', fontFamily: 'var(--font-mono)' }}>
-            FPL website → Points → check the URL
-          </span>
         </div>
       </div>
 
