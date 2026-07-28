@@ -493,7 +493,7 @@ input, textarea, button { font-family: inherit; }
 /* ── CHAT ── */
 .fpl-chat-layout {
   display: grid;
-  grid-template-columns: 1fr 440px;
+  grid-template-columns: 1fr 1fr;
   border: 0.5px solid var(--border-solid);
   min-height: 540px;
 }
