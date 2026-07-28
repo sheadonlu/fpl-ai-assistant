@@ -3,34 +3,11 @@ import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import { API_BASE } from '../config';
 
-// Split a single markdown string into up to 4 logical chunks for the grid cells.
-// Falls back gracefully if the AI returns one big blob.
-function parseAdviceIntoChunks(text) {
-  // Try splitting on markdown h2/h3 headings
-  const headingRegex = /(?=^#{2,3} )/m;
-  const parts = text.split(headingRegex).filter(Boolean);
-
-  if (parts.length >= 2) {
-    // Pad or trim to 4
-    while (parts.length < 4) parts.push('');
-    return parts.slice(0, 4);
-  }
-
-  // Fallback: split on double newlines into paragraphs, group them
-  const paragraphs = text.split(/\n\n+/).filter(Boolean);
-  const size = Math.ceil(paragraphs.length / 4);
-  const chunks = [];
-  for (let i = 0; i < 4; i++) {
-    chunks.push(paragraphs.slice(i * size, (i + 1) * size).join('\n\n'));
-  }
-  return chunks;
-}
-
-const TAGS = [
-  { label: 'Captain pick',    className: '' },
-  { label: 'Transfer advice', className: 'warn' },
-  { label: 'Chip strategy',   className: '' },
-  { label: 'Fixture view',    className: 'neutral' },
+const CATEGORIES = [
+  { key: 'captainPick',    label: 'Captain pick',    className: '' },
+  { key: 'transferAdvice', label: 'Transfer advice', className: 'warn' },
+  { key: 'chipStrategy',   label: 'Chip strategy',   className: '' },
+  { key: 'fixtureView',    label: 'Fixture view',    className: 'neutral' },
 ];
 
 const mdComponents = {
@@ -53,13 +30,15 @@ export default function AIAdvice({ teamId }) {
       const { data } = await axios.post(`${API_BASE}/ai/advice/${teamId}`);
       setAdvice(data.advice);
     } catch {
-      setAdvice('Could not fetch advice. Please try again.');
+      setAdvice({
+        captainPick: 'Could not fetch advice. Please try again.',
+        transferAdvice: '', chipStrategy: '', fixtureView: '',
+      });
     } finally {
       setLoading(false);
     }
   }
 
-  // Pre-fetch state
   if (!advice && !loading) {
     return (
       <div className="fpl-advice-grid">
@@ -87,17 +66,15 @@ export default function AIAdvice({ teamId }) {
     );
   }
 
-  const chunks = parseAdviceIntoChunks(advice);
-
   return (
     <div className="fpl-advice-grid">
-      {TAGS.map((tag, i) => (
-        <div className="fpl-advice-cell" key={i}>
-          <div className={`fpl-advice-tag ${tag.className}`}>{tag.label}</div>
-          {chunks[i] ? (
+      {CATEGORIES.map(({ key, label, className }) => (
+        <div className="fpl-advice-cell" key={key}>
+          <div className={`fpl-advice-tag ${className}`}>{label}</div>
+          {advice[key] ? (
             <div className="fpl-advice-body">
               <ReactMarkdown components={mdComponents}>
-                {chunks[i]}
+                {advice[key]}
               </ReactMarkdown>
             </div>
           ) : (

@@ -6,6 +6,7 @@ export async function getAIAdvice(prompt) {
   const response = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     max_tokens: 1024,
+    response_format: { type: 'json object' },
     messages: [
       { role: 'user', content: prompt }
     ],

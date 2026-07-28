@@ -72,13 +72,20 @@ ${availablePlayers.map(p => `- ${p.name} (${p.position}, ${p.team}) £${p.price}
 
 Only suggest players from the available players list above when recommending transfers. Do not suggest players not on this list.
 
-Please give:
-1. Recommended starting XI and captain choice with reasons
-2. Any transfer suggestions based on form and value
-3. Key things to watch this gameweek
+Respond with ONLY a valid JSON object, no other text, using exactly this shape:
+{
+  "captainPick": "markdown-formatted recommended starting XI and captain choice, with reasons",
+  "transferAdvice": "markdown-formatted transfer suggestions based on form and value",
+  "chipStrategy": "markdown-formatted chip timing and wildcard planning advice",
+  "fixtureView": "markdown-formatted notes on upcoming fixture difficulty for their squad"
+}
+
+Every field must contain relevant content only for that category — do not mix categories together.
+If you have nothing relevant for a category, write "No specific advice for this category." for that field instead of leaving it blank.
     `.trim();
 
-    const advice = await getAIAdvice(prompt);
+    const raw = await getAIAdvice(prompt);
+    const advice = JSON.parse(raw);
     res.json({ advice });
 
   } catch (err) {
