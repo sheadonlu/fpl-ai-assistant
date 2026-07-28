@@ -8,11 +8,25 @@ export async function getBootstrapData() {
 }
 
 export async function getManagerInfo(teamId) {
-  const { data } = await axios.get(`${FPL_BASE}/entry/${teamId}/`);
-  return data;
+  try {
+    const { data } = await axios.get(`${FPL_BASE}/entry/${teamId}/`);
+    return data;
+  } catch (err) {
+    if (err.response?.status === 404) {
+      throw new Error('Manager not found — FPL may still be resetting data for the new season.');
+    }
+    throw err;
+  }
 }
 
 export async function getManagerTeam(teamId, gameweek) {
-  const { data } = await axios.get(`${FPL_BASE}/entry/${teamId}/event/${gameweek}/picks/`);
-  return data;
+  try {
+    const { data } = await axios.get(`${FPL_BASE}/entry/${teamId}/event/${gameweek}/picks/`);
+    return data;
+  } catch (err) {
+    if (err.response?.status === 404) {
+      throw new Error('No picks found for this gameweek yet — this usually means the season hasn\'t started or the manager hasn\'t set a squad yet.');
+    }
+    throw err;
+  }
 }
