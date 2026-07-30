@@ -49,7 +49,7 @@ async function buildSquadContext(teamId) {
     .sort((a, b) => parseFloat(b.form) - parseFloat(a.form))
     .slice(0, CANDIDATE_SHORTLIST_SIZE);
 
-  const scoresById = await scorePlayers(bootstrap, nextGW, squadElements, candidateElements);
+  const scoresById = await scorePlayers(bootstrap, { currentGW, nextGW }, squadElements, candidateElements);
 
   const positionName = (elementType) => ['', 'GK', 'DEF', 'MID', 'FWD'][elementType];
 

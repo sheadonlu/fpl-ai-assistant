@@ -11,6 +11,11 @@
 import { getElementSummary, getFixturesForEvent } from '../fplService.js';
 import { expectedPoints, captainScore } from './scoringEngine.js';
 import { FORM_WINDOW_GAMEWEEKS, LEAGUE_AVG_FDR } from './constants.js';
+import {
+  getCachedRounds,
+  findStalePlayers,
+  upsertPlayerHistory,
+} from '../../db/playerHistoryCache.js';
 
 /**
  * Builds a map of teamId -> next-fixture difficulty rating (1-5) from the
@@ -72,40 +77,110 @@ function toEnginePlayer(element, history, fixtureDifficultyMap) {
 }
 
 /**
- * Fetches element-summary history for a list of player IDs in parallel,
- * keyed by player id. A failed individual fetch resolves to an empty
- * history rather than rejecting the whole batch (see getElementSummary's
- * own try/catch — this is just the batching layer).
+ * Cache-aware history fetch. Checks Postgres first; only calls the FPL
+ * element-summary endpoint for players missing required (finished)
+ * gameweeks, or whose current-gameweek row is past the live TTL.
+ * Finished gameweeks are cached forever — see playerHistoryCache.js for
+ * the staleness rule.
+ *
+ * Returns Map<playerId, historyArray> in the same shape as the raw FPL
+ * element-summary `history` field, so toEnginePlayer() doesn't need to
+ * know or care whether data came from cache or a live call.
  */
-async function fetchHistoriesById(playerIds) {
+async function fetchHistoriesById(playerIds, currentGameweek, finishedGameweeks) {
   const uniqueIds = [...new Set(playerIds)];
-  const results = await Promise.all(
-    uniqueIds.map(async (id) => {
-      const summary = await getElementSummary(id);
-      return [id, summary.history ?? []];
-    })
-  );
-  return new Map(results);
+  const minRound = Math.max(1, currentGameweek - FORM_WINDOW_GAMEWEEKS + 1);
+  const maxRound = currentGameweek;
+  const requiredRounds = [];
+  for (let r = minRound; r <= maxRound; r++) requiredRounds.push(r);
+
+  const cachedByPlayer = await getCachedRounds(uniqueIds, minRound, maxRound);
+
+  const stalePlayerIds = findStalePlayers({
+    playerIds: uniqueIds,
+    requiredRounds,
+    currentGameweek,
+    finishedGameweeks,
+    cachedByPlayer,
+  });
+
+  // Refetch only the players whose cache is missing or stale — this is
+  // the whole point of the cache: most requests should hit zero or a
+  // handful of live calls instead of 40+.
+  if (stalePlayerIds.length > 0) {
+    await Promise.all(
+      stalePlayerIds.map(async (id) => {
+        const summary = await getElementSummary(id);
+        const history = summary.history ?? [];
+        await upsertPlayerHistory(id, history, finishedGameweeks);
+        // Update the in-memory cache map so we don't need a second DB
+        // round-trip to read back what we just wrote.
+        const roundMap = new Map(
+          history
+            .filter((gw) => gw.round >= minRound && gw.round <= maxRound)
+            .map((gw) => [
+              gw.round,
+              {
+                player_id: id,
+                gameweek: gw.round,
+                minutes: gw.minutes ?? 0,
+                points: gw.total_points ?? 0,
+                xg: parseFloat(gw.expected_goals ?? 0),
+                xa: parseFloat(gw.expected_assists ?? 0),
+              },
+            ])
+        );
+        cachedByPlayer.set(id, roundMap);
+      })
+    );
+  }
+
+  // Reconstruct the array shape toEnginePlayer() expects from whatever
+  // rows we now have (cached + freshly fetched), sorted oldest to newest.
+  const result = new Map();
+  for (const id of uniqueIds) {
+    const roundMap = cachedByPlayer.get(id) ?? new Map();
+    const history = requiredRounds
+      .filter((round) => roundMap.has(round))
+      .sort((a, b) => a - b)
+      .map((round) => {
+        const row = roundMap.get(round);
+        return {
+          round,
+          minutes: row.minutes,
+          total_points: row.points,
+          expected_goals: row.xg,
+          expected_assists: row.xa,
+        };
+      });
+    result.set(id, history);
+  }
+
+  return result;
 }
 
 /**
- * Main entry point: given the bootstrap data, the next gameweek number,
- * and two lists of raw FPL elements (the user's squad, and a shortlist of
- * transfer candidates), returns expected-points + captaincy scores for
- * both groups, keyed by player id.
+ * Main entry point: given the bootstrap data, the current + next gameweek
+ * numbers, and two lists of raw FPL elements (the user's squad, and a
+ * shortlist of transfer candidates), returns expected-points + captaincy
+ * scores for both groups, keyed by player id.
  *
  * @param {object} bootstrap - result of getBootstrapData()
- * @param {number} nextGW - upcoming gameweek id
+ * @param {object} gameweeks - { currentGW, nextGW }
  * @param {object[]} squadElements - raw bootstrap elements for the squad
  * @param {object[]} candidateElements - raw bootstrap elements for the shortlist
  */
-export async function scorePlayers(bootstrap, nextGW, squadElements, candidateElements) {
+export async function scorePlayers(bootstrap, { currentGW, nextGW }, squadElements, candidateElements) {
   const allElements = [...squadElements, ...candidateElements];
   const allTeamIds = bootstrap.teams.map((t) => t.id);
 
+  const finishedGameweeks = new Set(
+    bootstrap.events.filter((e) => e.finished).map((e) => e.id)
+  );
+
   const [fixtureDifficultyMap, historyMap] = await Promise.all([
     buildFixtureDifficultyMap(nextGW, allTeamIds),
-    fetchHistoriesById(allElements.map((e) => e.id)),
+    fetchHistoriesById(allElements.map((e) => e.id), currentGW, finishedGameweeks),
   ]);
 
   const scoreOne = (element) => {
