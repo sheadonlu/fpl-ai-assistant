@@ -32,19 +32,28 @@ export async function getManagerInfo(teamId) {
 
 export async function getManagerTeam(teamId, gameweek) {
   if (USE_MOCK) {
+    // Real bootstrap IDs (Arsenal + Aston Villa), valid FPL composition:
+    // 2 GK, 5 DEF, 5 MID, 3 FWD — 11 starters (1-4-4-2) + 4 bench.
     return {
       picks: [
-        { element: 1,  is_captain: true,  is_vice_captain: false, multiplier: 2 },
-        { element: 2,  is_captain: false, is_vice_captain: true,  multiplier: 1 },
-        { element: 3,  is_captain: false, is_vice_captain: false, multiplier: 1 },
-        { element: 4,  is_captain: false, is_vice_captain: false, multiplier: 1 },
-        { element: 5,  is_captain: false, is_vice_captain: false, multiplier: 1 },
-        { element: 6,  is_captain: false, is_vice_captain: false, multiplier: 1 },
-        { element: 7,  is_captain: false, is_vice_captain: false, multiplier: 1 },
-        { element: 8,  is_captain: false, is_vice_captain: false, multiplier: 1 },
-        { element: 9,  is_captain: false, is_vice_captain: false, multiplier: 1 },
-        { element: 10, is_captain: false, is_vice_captain: false, multiplier: 1 },
-        { element: 11, is_captain: false, is_vice_captain: false, multiplier: 1 },
+        { element: 1,  is_captain: false, is_vice_captain: false, multiplier: 1 }, // Raya (GK, start)
+        { element: 28, is_captain: false, is_vice_captain: false, multiplier: 0 }, // E.Martinez (GK, bench)
+
+        { element: 4,  is_captain: false, is_vice_captain: false, multiplier: 1 }, // Gabriel (DEF, start)
+        { element: 8,  is_captain: false, is_vice_captain: false, multiplier: 1 }, // Calafiori (DEF, start)
+        { element: 30, is_captain: false, is_vice_captain: false, multiplier: 1 }, // Digne (DEF, start)
+        { element: 31, is_captain: false, is_vice_captain: false, multiplier: 1 }, // Konsa (DEF, start)
+        { element: 32, is_captain: false, is_vice_captain: false, multiplier: 0 }, // Cash (DEF, bench)
+
+        { element: 12, is_captain: true,  is_vice_captain: false, multiplier: 2 }, // Saka (MID, captain)
+        { element: 13, is_captain: false, is_vice_captain: true,  multiplier: 1 }, // Rice (MID, vice)
+        { element: 14, is_captain: false, is_vice_captain: false, multiplier: 1 }, // Eze (MID, start)
+        { element: 15, is_captain: false, is_vice_captain: false, multiplier: 1 }, // Ødegaard (MID, start)
+        { element: 18, is_captain: false, is_vice_captain: false, multiplier: 0 }, // Martinelli (MID, bench)
+
+        { element: 25, is_captain: false, is_vice_captain: false, multiplier: 1 }, // Gyökeres (FWD, start)
+        { element: 26, is_captain: false, is_vice_captain: false, multiplier: 1 }, // Havertz (FWD, start)
+        { element: 27, is_captain: false, is_vice_captain: false, multiplier: 0 }, // G.Jesus (FWD, bench)
       ],
       entry_history: {
         event_transfers: 1,
@@ -53,6 +62,17 @@ export async function getManagerTeam(teamId, gameweek) {
       },
     };
   }
+
+  try {
+    const { data } = await axios.get(`${FPL_BASE}/entry/${teamId}/event/${gameweek}/picks/`);
+    return data;
+  } catch (err) {
+    if (err.response?.status === 404) {
+      throw new Error('No picks found for this gameweek yet — this usually means the season hasn\'t started or the manager hasn\'t set a squad yet.');
+    }
+    throw err;
+  }
+}
 
   try {
     const { data } = await axios.get(`${FPL_BASE}/entry/${teamId}/event/${gameweek}/picks/`);
