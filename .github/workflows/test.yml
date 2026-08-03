@@ -20,5 +20,8 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run scoring engine unit tests
         run: node --test src/services/*.test.js src/services/**/*.test.js
