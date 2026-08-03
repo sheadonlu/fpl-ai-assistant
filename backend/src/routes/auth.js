@@ -1,6 +1,6 @@
 // src/routes/auth.js
 import { Router } from 'express';
-import pool from '../db/pool.js';
+import { pool } from '../db/pool.js';
 import { hashPassword, verifyPassword, generateToken } from '../services/authService.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 
