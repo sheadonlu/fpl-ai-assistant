@@ -30,11 +30,6 @@ CREATE TABLE IF NOT EXISTS team_fixture_difficulty (
   PRIMARY KEY (team_id, gameweek)
 );
 
--- db/schema.sql (additions)
---
--- Append these to your existing schema.sql, then re-run:
--- psql $DATABASE_URL -f db/schema.sql
-
 CREATE TABLE IF NOT EXISTS users (
   id            SERIAL PRIMARY KEY,
   email         TEXT UNIQUE NOT NULL,
