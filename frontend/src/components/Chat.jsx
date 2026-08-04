@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { API_BASE } from '../config';
+import { useAuth } from '../context/useAuth';
 
 const mdComponents = {
   p:      ({ children }) => <p>{children}</p>,
@@ -19,12 +20,13 @@ const CAPABILITIES = [
   'Bench order optimisation',
 ];
 
-export default function Chat({ teamId }) {
+export default function Chat({ teamId, onLoginClick }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
   const bottomRef               = useRef(null);
+  const { token, isAuthed, logout } = useAuth();
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -47,14 +49,23 @@ export default function Chat({ teamId }) {
     try {
       const res = await fetch(`${API_BASE}/ai/chat/${teamId}`, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ messages, userMessage: trimmed }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization:  `Bearer ${token}`,
+        },
+        body: JSON.stringify({ messages, userMessage: trimmed }),
       });
+      if (res.status === 401) {
+        logout();
+        throw new Error('Your session expired. Please log in again.');
+      }
       if (!res.ok) throw new Error('Failed');
       const data = await res.json();
       setMessages(data.messages);
-    } catch {
-      setError('Something went wrong. Try again.');
+    } catch (err) {
+      setError(err.message === 'Your session expired. Please log in again.'
+        ? err.message
+        : 'Something went wrong. Try again.');
       setMessages(updatedMessages);
     } finally {
       setLoading(false);
@@ -94,7 +105,14 @@ export default function Chat({ teamId }) {
       {/* Right chat window */}
       <div className="fpl-chat-window">
         <div className="fpl-chat-messages">
-          {messages.length === 0 && (
+          {!isAuthed ? (
+            <p className="fpl-chat-empty">
+              Log in to chat with the AI analyst.<br />
+              <button className="fpl-advice-fetch-btn" onClick={onLoginClick} type="button" style={{ marginTop: '1rem' }}>
+                Log in →
+              </button>
+            </p>
+          ) : messages.length === 0 && (
             <p className="fpl-chat-empty">
               Ask about transfers, captaincy,<br />chips, or your squad…
             </p>
@@ -137,15 +155,16 @@ export default function Chat({ teamId }) {
           <textarea
             className="fpl-chat-input"
             rows={1}
-            placeholder="Ask something…"
+            placeholder={isAuthed ? 'Ask something…' : 'Log in to ask something…'}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            disabled={!isAuthed}
           />
           <button
             className="fpl-chat-send"
             onClick={sendMessage}
-            disabled={loading || !input.trim()}
+            disabled={!isAuthed || loading || !input.trim()}
           >
             Send ↑
           </button>

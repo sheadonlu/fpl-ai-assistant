@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import { API_BASE } from '../config';
+import { useAuth } from '../context/useAuth';
 
 const CATEGORIES = [
   { key: 'captainPick',    label: 'Captain pick',    className: '' },
@@ -20,23 +21,51 @@ const mdComponents = {
   h3:     ({ children }) => <h3>{children}</h3>,
 };
 
-export default function AIAdvice({ teamId }) {
+export default function AIAdvice({ teamId, onLoginClick }) {
   const [advice, setAdvice]   = useState(null);
   const [loading, setLoading] = useState(false);
+  const { token, isAuthed, logout } = useAuth();
 
   async function fetchAdvice() {
     setLoading(true);
     try {
-      const { data } = await axios.post(`${API_BASE}/ai/advice/${teamId}`);
+      const { data } = await axios.post(
+        `${API_BASE}/ai/advice/${teamId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setAdvice(data.advice);
-    } catch {
-      setAdvice({
-        captainPick: 'Could not fetch advice. Please try again.',
-        transferAdvice: '', chipStrategy: '', fixtureView: '',
-      });
+    } catch (err) {
+      if (err.response?.status === 401) {
+        logout();
+        setAdvice({
+          captainPick: 'Your session expired. Please log in again.',
+          transferAdvice: '', chipStrategy: '', fixtureView: '',
+        });
+      } else {
+        setAdvice({
+          captainPick: 'Could not fetch advice. Please try again.',
+          transferAdvice: '', chipStrategy: '', fixtureView: '',
+        });
+      }
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!isAuthed) {
+    return (
+      <div className="fpl-advice-grid">
+        <div className="fpl-advice-fetch-wrap">
+          <button className="fpl-advice-fetch-btn" onClick={onLoginClick} type="button">
+            Log in to generate AI analysis →
+          </button>
+          <span className="fpl-advice-fetch-hint">
+            Squad analysis is available once you're logged in
+          </span>
+        </div>
+      </div>
+    );
   }
 
   if (!advice && !loading) {

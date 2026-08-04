@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { getBootstrapData, getManagerInfo, getManagerTeam } from '../services/fplService.js';
 import { getAIAdvice, getChatReply } from '../services/aiService.js';
 import { scorePlayers } from '../services/scoring/scoringAdapter.js';
+import { requireAuth } from '../middleware/requireAuth.js';
+import { aiRateLimit } from '../middleware/aiRateLimit.js';
 
 function sanitizeJsonString(str) {
   return str.replace(/"(?:[^"\\]|\\.)*"/gs, (match) => {
@@ -132,7 +134,7 @@ Base captaincy and transfer reasoning on the Expected Points and breakdown value
 }
 
 // POST /api/ai/advice/:teamId
-router.post('/advice/:teamId', async (req, res) => {
+router.post('/advice/:teamId', aiRateLimit, requireAuth, async (req, res) => {
   try {
     const { teamId } = req.params;
     const context = await buildSquadContext(teamId);
@@ -167,7 +169,7 @@ If you have nothing relevant for a category, write "No specific advice for this 
 });
 
 // POST /api/ai/chat/:teamId
-router.post('/chat/:teamId', async (req, res) => {
+router.post('/chat/:teamId', aiRateLimit, requireAuth, async (req, res) => {
   try {
     const { teamId } = req.params;
     const { messages, userMessage } = req.body;

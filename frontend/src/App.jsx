@@ -103,7 +103,7 @@ function App() {
                 Context-aware<br />Squad + fixture data
               </div>
             </div>
-            <AIAdvice teamId={managerData.teamId} />
+            <AIAdvice teamId={managerData.teamId} onLoginClick={() => setShowAuthModal(true)} />
           </section>
 
           {/* Chat */}
@@ -114,7 +114,7 @@ function App() {
                 Full squad context<br />Live fixture data
               </div>
             </div>
-            <Chat teamId={managerData.teamId} />
+            <Chat teamId={managerData.teamId} onLoginClick={() => setShowAuthModal(true)} />
           </section>
         </main>
       )}
