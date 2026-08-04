@@ -1,21 +1,29 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { API_BASE } from './config';
+import { useAuth } from './context/useAuth';
+import { saveTeam as saveTeamRequest } from './api/authApi';
 import Nav        from './components/Nav';
 import Ticker     from './components/Ticker';
 import TeamIdForm from './components/TeamIdForm';
 import Squad      from './components/Squad';
 import AIAdvice   from './components/AIAdvice';
 import Chat       from './components/Chat';
+import AuthModal  from './components/AuthModal';
 
 function App() {
   const [managerData, setManagerData] = useState(null);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [teamSaved, setTeamSaved] = useState(false);
+  const [savingTeam, setSavingTeam] = useState(false);
+  const { token, isAuthed } = useAuth();
 
   async function handleTeamSubmit(teamId) {
     setLoading(true);
     setError(null);
+    setTeamSaved(false);
     try {
       const { data } = await axios.get(`${API_BASE}/fpl/manager/${teamId}`);
       setManagerData({ ...data, teamId });
@@ -28,6 +36,19 @@ function App() {
     }
   }
 
+  async function handleSaveTeam() {
+    if (!isAuthed || !managerData?.teamId) return;
+    setSavingTeam(true);
+    try {
+      await saveTeamRequest(token, managerData.teamId, managerData.manager?.teamName);
+      setTeamSaved(true);
+    } catch {
+      // Non-critical action — the "Save team" button just stays enabled to retry.
+    } finally {
+      setSavingTeam(false);
+    }
+  }
+
   const loaded = managerData && managerData.squad;
 
   return (
@@ -35,7 +56,12 @@ function App() {
       <Nav
         teamId={managerData?.teamId ?? null}
         managerData={managerData?.manager ?? null}
+        onLoginClick={() => setShowAuthModal(true)}
+        onSaveTeam={handleSaveTeam}
+        saved={teamSaved}
+        saving={savingTeam}
       />
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       <Ticker
         squad={managerData?.squad ?? []}
         managerData={managerData?.manager ?? null}

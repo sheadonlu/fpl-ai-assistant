@@ -1,7 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../context/useAuth';
+import { getTeams, deleteTeam as deleteTeamRequest } from '../api/authApi';
 
 export default function TeamIdForm({ onSubmit, loading, error }) {
   const [teamId, setTeamId] = useState('');
+  const { token, isAuthed } = useAuth();
+  const [savedTeams, setSavedTeams] = useState([]);
+  const [teamsError, setTeamsError] = useState(null);
+
+  useEffect(() => {
+    if (!isAuthed) return;
+    getTeams(token)
+      .then(setSavedTeams)
+      .catch(err => setTeamsError(err.message));
+  }, [isAuthed, token]);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -10,6 +22,16 @@ export default function TeamIdForm({ onSubmit, loading, error }) {
 
   function handleKeyDown(e) {
     if (e.key === 'Enter') handleSubmit(e);
+  }
+
+  async function handleDeleteSaved(e, id) {
+    e.stopPropagation();
+    try {
+      await deleteTeamRequest(token, id);
+      setSavedTeams(teams => teams.filter(t => t.id !== id));
+    } catch (err) {
+      setTeamsError(err.message);
+    }
   }
 
   return (
@@ -28,6 +50,28 @@ export default function TeamIdForm({ onSubmit, loading, error }) {
         </p>
 
         <div className="fpl-hero-form">
+          {isAuthed && savedTeams.length > 0 && (
+            <div className="fpl-saved-teams">
+              <span className="fpl-hero-form-label">Your saved teams</span>
+              <ul className="fpl-saved-teams-list">
+                {savedTeams.map(t => (
+                  <li key={t.id} className="fpl-saved-team" onClick={() => onSubmit(String(t.fpl_team_id))}>
+                    <span>{t.nickname || `Team ${t.fpl_team_id}`}</span>
+                    <button
+                      className="fpl-saved-team-delete"
+                      onClick={e => handleDeleteSaved(e, t.id)}
+                      aria-label="Remove saved team"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {teamsError && <span className="fpl-hero-error">{teamsError}</span>}
+
           <span className="fpl-hero-form-label">Enter your FPL Team ID</span>
           <div className="fpl-hero-input-row">
             <input
