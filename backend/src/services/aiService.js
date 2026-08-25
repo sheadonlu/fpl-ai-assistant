@@ -4,8 +4,9 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function getAIAdvice(prompt) {
   const response = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    max_tokens: 1024,
+    model: 'openai/gpt-oss-120b',
+    max_tokens: 4096,
+    reasoning_effort: 'low',
     messages: [
       { role: 'user', content: prompt }
     ],
@@ -15,12 +16,13 @@ export async function getAIAdvice(prompt) {
 }
 export async function getChatReply(systemPrompt, messages) {
   const completion = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+    model: "openai/gpt-oss-120b",
     messages: [
       { role: "system", content: systemPrompt },
       ...messages,
     ],
-    max_tokens: 1024,
+    max_tokens: 4096,
+    reasoning_effort: 'low',
   });
   return completion.choices[0].message.content;
 }
