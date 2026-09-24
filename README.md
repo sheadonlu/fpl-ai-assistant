@@ -222,7 +222,7 @@ Compatible with all modern browsers, including:
 
 ## 👤 My Contribution
 
-I worked on this project by myself, designing and building all of it including the
+I worked on this project by myself, designing and building all of it including the:
 
 * React frontend — every component (`Squad`, `AIAdvice`, `Chat`, `TeamIdForm`, `Nav`, `AuthModal`, `Ticker`), the auth context, and the custom CSS design system
 * Express backend — FPL API integration, the auth routes and JWT middleware, saved teams, and the AI advice and chat routes
@@ -232,7 +232,7 @@ I worked on this project by myself, designing and building all of it including t
 
 ## 💡 What I Learned
 
-This was my first full-stack project, and I learned a lot by building both the front and backend. It was very interesting to see the whole structure of the project coming together. I ran into issues with the FPL AI and getting data to show up correctly during the off-season, but this was remedied with creating mock data to display before the soccer season started.
+This was my first full-stack project, and I learned a lot by building both the front and backend. It was very interesting to see the whole structure of the project coming together. I ran into issues with the FPL API and getting data to show up correctly during the off-season, but this was remedied with creating mock data to display before the soccer season started.
 
 ## 📚 References
 
@@ -242,6 +242,7 @@ This was my first full-stack project, and I learned a lot by building both the f
 * [Express docs](https://expressjs.com/), [node-postgres](https://node-postgres.com/), [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken), [bcryptjs](https://github.com/dcodeIO/bcrypt.js), [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit)
 * [react-markdown](https://github.com/remarkjs/react-markdown) — rendering AI responses
 * [Neon](https://neon.tech/) — hosted Postgres
+* [Claude](https://claude.ai/new) — code review, README drafting
 
 
 ## 📄 License
