@@ -1,32 +1,37 @@
-⚽ FPL AI Assistant
+### ⚽ FPL AI Assistant
+
 A Fantasy Premier League companion that treats squad decisions as a scoring problem instead of a stat-scrolling exercise. A deterministic engine ranks every player by expected points, and an LLM turns that into plain-English gameweek advice — grounded in the numbers, not guessing at them. Anonymous squad lookups work with zero setup; an optional account unlocks AI advice, chat, and saved teams.
+
 Live App: https://fpl-ai-assistant-mu.vercel.app
 
-🚀 Tech Stack
+### 🚀 Tech Stack
 
-Frontend
+# Frontend
+
 * React 19
 * Vite
 * Axios
 * React Markdown
 
-Backend
+# Backend
+
 * Node.js + Express 5
 * PostgreSQL (Neon), via `pg`
 * JWT auth — `jsonwebtoken` + `bcryptjs`
 * `express-rate-limit`
 
-AI & Data
+# AI & Data
+
 * Groq API (gpt-oss-120b)
 * Official Fantasy Premier League API
 
-🧠 Under the hood
+### 🧠 Under the hood
 
 * Deterministic scoring engine — every player gets an Expected Points score computed from five weighted, documented components: minutes probability (rotation/injury risk), exponentially-decayed recent form, attacking threat (xG/xA), a fixture-difficulty modifier, and points volatility. Pure functions of structured input data — no randomness, no LLM involved. See the formulas and their rationale in `backend/src/services/scoring/scoringEngine.js`, and 28 unit tests covering the edge cases in `scoringEngine.test.js`.
 * Captain scoring — splits Expected Points into a "safe" score and a "differential" score using the player's own point volatility, so picking between a nailed-on captain and a punt is a numbers question, not a vibe.
 * The LLM only ever explains computed numbers — the AI advice and chat layer (`backend/src/services/aiService.js`, `backend/src/routes/ai.js`) is given the scoring engine's Expected Points and its breakdown, and is explicitly instructed not to invent its own statistics. It's a narrator for the math, not a second opinion.
 
-✨ Features
+### ✨ Features
 
 * 🔎 Anonymous squad lookup — enter any public FPL team ID, no account required, to view your starting XI, bench, captain, and key stats
 * 🔐 Optional account — register/login (JWT + bcrypt) to unlock AI features and save teams
@@ -37,7 +42,8 @@ AI & Data
 * 🛡️ Rate-limited AI routes — 10 requests / 15 min per IP, on top of the login requirement, to protect the Groq quota
 * 🧪 Mock-data mode — `USE_MOCK_DATA=true` runs the app against a fabricated squad and fixtures, for developing during the FPL off-season
 
-⚡ Quick Start (no setup needed)
+### ⚡ Quick Start (no setup needed)
+
 Requires [Node.js](https://nodejs.org/) 18 or later. No `.env` files, database, or API keys are needed for this — squad lookup works out of the box.
 
 ```
@@ -65,7 +71,8 @@ Open the URL Vite prints (usually `http://localhost:5173`), enter any public FPL
 
 Login, saved teams, AI advice, and chat need a database and a Groq API key — see Full Setup below, or try them on the live app.
 
-🛠️ Full Setup (login + AI features)
+### 🛠️ Full Setup (login + AI features)
+
 Requires [Node.js](https://nodejs.org/) 18 or later (CI runs on 22) and a PostgreSQL database — a free [Neon](https://neon.tech) project works well.
 
 Clone the repository
@@ -138,7 +145,7 @@ cd backend && npm test
 
 36 unit tests (auth + scoring engine) via Node's built-in test runner — also run automatically in CI on every push/PR to `main`.
 
-Project structure
+### Project structure
 
 ```
 backend/
@@ -182,27 +189,30 @@ frontend/
 
 ```
 
-📖 Usage
-Looking up a squad
+### 📖 Usage
+
+# Looking up a squad
 
 1. Enter any public FPL team ID (visible in the URL on the official FPL site) into the home screen.
 2. Click Analyse. No account needed for this step.
 
-Getting AI advice
+# Getting AI advice
 
 1. Log in or register from the top-right corner.
 2. Open the AI Analysis section and click Generate AI Analysis, or open Chat to ask a free-form question.
 3. Every answer is grounded in the scoring engine's computed Expected Points — the model explains the numbers rather than inventing its own.
 
-Saving teams
+# Saving teams
 
 1. While logged in, load a squad and click Save team in the nav bar.
 2. Saved teams appear as a quick-pick list on the home screen — click one to reload it, or remove it with the × button.
 
-🔐 Data & privacy
+### 🔐 Data & privacy
+
 Passwords are hashed with bcrypt before storage — never stored or logged in plaintext. Auth uses a JWT (7-day expiry) kept in the browser's `localStorage` under the key `fplAuth`, sent as an `Authorization: Bearer` header on requests that need it (saved teams, AI advice, AI chat). Squad lookups are anonymous by default and require no account or token. Account emails and saved FPL team IDs live in your own Postgres database (see `schema.sql`) — the only outside services in the loop are the official FPL API (squad data) and Groq (AI advice generation, which receives your computed squad stats, not your account details).
 
-🌐 Browser Support
+### 🌐 Browser Support
+
 Compatible with all modern browsers, including:
 
 * Chrome
@@ -210,8 +220,9 @@ Compatible with all modern browsers, including:
 * Safari
 * Microsoft Edge
 
-👤 My Contribution
-This is a solo project — I designed and built all of it:
+### 👤 My Contribution
+
+I worked on this project by myself, designing and building all of it including the
 
 * React frontend — every component (`Squad`, `AIAdvice`, `Chat`, `TeamIdForm`, `Nav`, `AuthModal`, `Ticker`), the auth context, and the custom CSS design system
 * Express backend — FPL API integration, the auth routes and JWT middleware, saved teams, and the AI advice and chat routes
@@ -219,23 +230,22 @@ This is a solo project — I designed and built all of it:
 * Postgres schema and the gameweek history cache
 * Deployment and the GitHub Actions test workflow
 
-💡 What I Learned
-<!-- TODO: write this in your own words. Pick ONE challenge, e.g.:
-     - the LLM inventing stats, and how you fixed it by having the scoring engine compute the numbers and the LLM only explain them
-     - hammering the FPL API with 40+ calls per request, and designing the staleness-aware cache
-     - the Groq model being deprecated and migrating to gpt-oss-120b
-     Structure: what went wrong → what you tried → what worked → what you'd do differently. -->
+### 💡 What I Learned
 
-📚 References
+This was my first full-stack project, and I learned a lot by building both the front and backend. It was very interesting to see the whole structure of the project coming together. I ran into issues with the FPL AI and getting data to show up correctly during the off-season, but this was remedied with creating mock data to display before the soccer season started.
+
+### 📚 References
+
 * [Fantasy Premier League API](https://fantasy.premierleague.com/api/bootstrap-static/) (unofficial, public endpoints) — squad, player, and fixture data
 * [Groq API docs](https://console.groq.com/docs) — LLM inference
 * [React docs](https://react.dev/) and [Vite docs](https://vite.dev/)
 * [Express docs](https://expressjs.com/), [node-postgres](https://node-postgres.com/), [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken), [bcryptjs](https://github.com/dcodeIO/bcrypt.js), [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit)
 * [react-markdown](https://github.com/remarkjs/react-markdown) — rendering AI responses
 * [Neon](https://neon.tech/) — hosted Postgres
-<!-- TODO: add any tutorials or courses you followed, and note any AI coding assistants you used and for which parts. -->
 
-📄 License
+
+### 📄 License
+
 This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
 
 Author: Sheadon Lu
