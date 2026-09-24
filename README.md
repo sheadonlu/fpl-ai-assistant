@@ -17,7 +17,7 @@ Backend
 * `express-rate-limit`
 
 AI & Data
-* Groq API (LLaMA 3.3 70B)
+* Groq API (gpt-oss-120b)
 * Official Fantasy Premier League API
 
 🧠 Under the hood
@@ -37,10 +37,35 @@ AI & Data
 * 🛡️ Rate-limited AI routes — 10 requests / 15 min per IP, on top of the login requirement, to protect the Groq quota
 * 🧪 Mock-data mode — `USE_MOCK_DATA=true` runs the app against a fabricated squad and fixtures, for developing during the FPL off-season
 
-📸 Screenshots
-Add screenshots of the squad view, AI advice panel, and chat here.
+⚡ Quick Start (no setup needed)
+Requires [Node.js](https://nodejs.org/) 18 or later. No `.env` files, database, or API keys are needed for this — squad lookup works out of the box.
 
-🛠️ Getting Started
+```
+git clone https://github.com/sheadonlu/fpl-ai-assistant.git
+cd fpl-ai-assistant
+```
+
+In one terminal, start the backend:
+
+```
+cd backend
+npm install
+npm run dev
+```
+
+In a second terminal, start the frontend:
+
+```
+cd frontend
+npm install
+npm run dev
+```
+
+Open the URL Vite prints (usually `http://localhost:5173`), enter any public FPL team ID (e.g. `1`), and click Analyse to see that squad.
+
+Login, saved teams, AI advice, and chat need a database and a Groq API key — see Full Setup below, or try them on the live app.
+
+🛠️ Full Setup (login + AI features)
 Requires [Node.js](https://nodejs.org/) 18 or later (CI runs on 22) and a PostgreSQL database — a free [Neon](https://neon.tech) project works well.
 
 Clone the repository
@@ -184,6 +209,31 @@ Compatible with all modern browsers, including:
 * Firefox
 * Safari
 * Microsoft Edge
+
+👤 My Contribution
+This is a solo project — I designed and built all of it:
+
+* React frontend — every component (`Squad`, `AIAdvice`, `Chat`, `TeamIdForm`, `Nav`, `AuthModal`, `Ticker`), the auth context, and the custom CSS design system
+* Express backend — FPL API integration, the auth routes and JWT middleware, saved teams, and the AI advice and chat routes
+* Scoring engine — the Expected Points and captaincy formulas, plus their unit tests
+* Postgres schema and the gameweek history cache
+* Deployment and the GitHub Actions test workflow
+
+💡 What I Learned
+<!-- TODO: write this in your own words. Pick ONE challenge, e.g.:
+     - the LLM inventing stats, and how you fixed it by having the scoring engine compute the numbers and the LLM only explain them
+     - hammering the FPL API with 40+ calls per request, and designing the staleness-aware cache
+     - the Groq model being deprecated and migrating to gpt-oss-120b
+     Structure: what went wrong → what you tried → what worked → what you'd do differently. -->
+
+📚 References
+* [Fantasy Premier League API](https://fantasy.premierleague.com/api/bootstrap-static/) (unofficial, public endpoints) — squad, player, and fixture data
+* [Groq API docs](https://console.groq.com/docs) — LLM inference
+* [React docs](https://react.dev/) and [Vite docs](https://vite.dev/)
+* [Express docs](https://expressjs.com/), [node-postgres](https://node-postgres.com/), [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken), [bcryptjs](https://github.com/dcodeIO/bcrypt.js), [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit)
+* [react-markdown](https://github.com/remarkjs/react-markdown) — rendering AI responses
+* [Neon](https://neon.tech/) — hosted Postgres
+<!-- TODO: add any tutorials or courses you followed, and note any AI coding assistants you used and for which parts. -->
 
 📄 License
 This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
